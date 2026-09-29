@@ -1,0 +1,14 @@
+<div class="app-shell">
+  <aside class="sidebar">
+    <a class="brand" routerLink="/dashboard"><span class="brand-mark"><svg viewBox="0 0 24 24" fill="none"><path d="M5 19V9.8L12 5l7 4.8V19h-5v-5h-4v5H5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M3 10.3 12 4l9 6.3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span><span>fieldnotes<span class="brand-dot">.</span></span></a>
+    <div class="workspace-label">WORKSPACE</div>
+    <nav class="navigation" aria-label="Main navigation">
+      <a class="side-link" routerLink="/dashboard" routerLinkActive="selected"><span class="side-icon"><svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="1"/><rect x="13.5" y="3.5" width="7" height="4" rx="1"/><rect x="13.5" y="9.5" width="7" height="10" rx="1"/><rect x="3.5" y="13.5" width="7" height="6" rx="1"/></svg></span>Dashboard</a>
+      <a class="side-link" routerLink="/leads" routerLinkActive="selected"><span class="side-icon"><svg viewBox="0 0 24 24"><path d="M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20m6-9a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm6-6.5a3.5 3.5 0 0 1 0 6.8M20 20v-1.5a3.5 3.5 0 0 0-2.5-3.35"/></svg></span>Lead directory</a>
+      <a class="side-link" routerLink="/paste" routerLinkActive="selected"><span class="side-icon">✨</span>Paste leads</a>
+      <a class="side-link" routerLink="/coverage" routerLinkActive="selected"><span class="side-icon"><svg viewBox="0 0 24 24"><path d="M3.5 6.5 9 4l6 2 5.5-2v13.5L15 20l-6-2-5.5 2V6.5Z"/><path d="M9 4v14m6-12v14"/></svg></span>District coverage<span class="nav-count">34</span></a>
+    </nav>
+    <div class="sidebar-bottom"><div class="location-card"><span class="location-pin"><svg viewBox="0 0 24 24"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2"/></svg></span><div><span class="location-caption">ACTIVE STATE</span><strong>Gujarat, India</strong></div><span class="green-dot"></span></div><div class="profile"><span class="avatar">S</span><span class="profile-info"><strong>Sales workspace</strong><small>Lead research</small></span><button class="more-button" aria-label="Workspace options">···</button></div></div>
+  </aside>
+  <main class="main-area"><header class="topbar"><div class="breadcrumbs"><span>Fieldnotes</span><span class="crumb-slash">/</span><strong>Gujarat workspace</strong></div><div class="top-actions"><span class="connection-pill"><i></i>Supabase enabled</span><span class="state-chip"><span class="state-dot"></span>Gujarat</span></div></header><router-outlet /><footer class="shell-footer"><span>Built for thoughtful outreach.</span><span>GUJARAT <b>·</b> {{ currentYear }}</span></footer></main>
+</div>
