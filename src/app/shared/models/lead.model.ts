@@ -38,3 +38,30 @@ export interface DistrictCoverage {
 export interface DistrictSummary extends DistrictCoverage {
   leadCount: number;
 }
+
+export interface StateDashboardSummary {
+  state: string;
+  totalLeads: number;
+  districtsWithLeads: number;
+  websiteGapCount: number;
+  coverage: DistrictSummary[];
+  industryStats: {
+    totalLeads: number;
+    categoryCount: number;
+    categories: { name: string; count: number }[];
+  };
+}
+
+export interface LeadListSummary {
+  totalLeads: number;
+  websiteGapCount: number;
+  contactedCount: number;
+}
+
+export interface LeadPage {
+  items: Lead[];
+  total: number;
+  limit: number;
+  offset: number;
+  summary: LeadListSummary;
+}

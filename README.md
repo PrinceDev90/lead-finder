@@ -1,24 +1,37 @@
 # Fieldnotes — Lead workspace
 
-A modular Angular workspace for statewide business research and sales outreach. Leads and district coverage progress are stored in Supabase.
+A modular Angular workspace for statewide business research and sales outreach. Angular uses the Express API; the API stores leads and district coverage in MongoDB.
 
-## Start the app
+## Install and start the app
 
 ```sh
 npm install
+cd ..\backend
+npm install
+cd ..\data_collector
+```
+
+Start the API and Angular app in separate terminals from the project root:
+
+```sh
+npm run start:api
+```
+
+```sh
 npm start
 ```
 
-## Configure Supabase
+The backend is the sibling folder `LEADS_DATA\backend`; `data_collector` contains only the Angular frontend. Its private `.env` is in the backend folder. Set `MONGODB_DB` to the database shown in Compass (configured as `leads_data`) and use the imported `leads` and `district_coverage` collections. Keep your existing `GEMINI_API_KEY` there for AI paste extraction.
 
-The project URL and publishable key are configured in `src/environments/environment.ts`. Existing installs should run `supabase/migrations/20260928_district_workspace.sql` in the Supabase SQL Editor. See [SUPABASE_SETUP.md](SUPABASE_SETUP.md) for setup and security details.
+After importing your CSV files into MongoDB, follow [MONGODB_SETUP.md](MONGODB_SETUP.md), set the expected row counts in `..\backend\.env`, and run `npm run normalize:csv` from `..\backend` before starting the API. This validates IDs, timestamps, numeric targets, and coverage keys, then normalizes CSV-imported types.
 
 ## Project structure
 
-- `src/app/core/data` — Supabase data access
+- `..\backend\src` — modular Express API, MongoDB models, controllers, routes, and Gemini service
+- `src/app/core/data` — Angular client for the Express API
 - `src/app/shared/models` — shared lead, coverage and district models
 - `src/app/features/dashboard` — statewide reporting
-- `src/app/features/leads` — lead directory and CRUD
+- `src/app/features/leads` — lead directory and CRUD; API supports pagination and filters
 - `src/app/features/coverage` — district research progress
 
 ## Build

@@ -8,9 +8,7 @@
 
 # Node
 /node_modules
-/backend/.env
-/backend/.env.*
-!/backend/.env.example
+/.pnpm-store
 npm-debug.log
 yarn-error.log
 

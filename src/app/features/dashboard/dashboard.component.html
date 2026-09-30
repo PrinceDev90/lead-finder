@@ -6,38 +6,34 @@
       <p class="page-subtitle">Your statewide prospecting progress, all in one place.</p>
     </div><a class="button button-primary" routerLink="/leads"><span class="plus">+</span> Manage leads</a>
   </div>
-  <div class="notice error-notice" *ngIf="error"><span class="notice-icon">!</span><span>{{ error }}</span></div>
+  <div class="notice error-notice" *ngIf="error" role="alert">
+    <ng-icon class="notice-icon" name="lucideTriangleAlert" aria-hidden="true" />
+    <span>{{ error }}</span>
+    <button class="retry-button" type="button" (click)="loadData()" [disabled]="loading">Retry</button>
+  </div>
   <section class="stats-grid" aria-label="Workspace summary">
     <article class="stat-card">
-      <div class="stat-top"><span>Total leads</span><span class="stat-icon icon-lilac"><svg viewBox="0 0 24 24">
-            <path
-              d="M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20m6-9a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm6-6.5a3.5 3.5 0 0 1 0 6.8M20 20v-1.5a3.5 3.5 0 0 0-2.5-3.35" />
-          </svg></span></div>
-      <div class="stat-value">{{ loading ? '—' : leads.length }}</div>
+      <div class="stat-top"><span>Total leads</span><span class="stat-icon icon-lilac"><ng-icon name="lucideUsers"
+            aria-hidden="true" /></span></div>
+      <div class="stat-value">{{ loading ? '—' : (totalLeads | number) }}</div>
       <div class="stat-foot">Saved across Gujarat</div>
     </article>
     <article class="stat-card">
-      <div class="stat-top"><span>Districts with leads</span><span class="stat-icon icon-blue"><svg viewBox="0 0 24 24">
-            <path d="M3.5 6.5 9 4l6 2 5.5-2v13.5L15 20l-6-2-5.5 2V6.5Z" />
-            <path d="M9 4v14m6-12v14" />
-          </svg></span></div>
+      <div class="stat-top"><span>Districts with leads</span><span class="stat-icon icon-blue"><ng-icon name="lucideMap"
+            aria-hidden="true" /></span></div>
       <div class="stat-value">{{ loading ? '—' : districtsWithLeads }}<span class="stat-change">of {{ coverage.length ||
           34 }} districts</span></div>
       <div class="stat-foot">Leads recorded in a district</div>
     </article>
     <article class="stat-card">
-      <div class="stat-top"><span>Coverage marked complete</span><span class="stat-icon icon-green"><svg
-            viewBox="0 0 24 24">
-            <path d="m5 12 4 4L19 6" />
-          </svg></span></div>
+      <div class="stat-top"><span>Coverage marked complete</span><span class="stat-icon icon-green"><ng-icon
+            name="lucideCircleCheck" aria-hidden="true" /></span></div>
       <div class="stat-value">{{ coveredCount }}<span class="stat-change">{{ coveragePercent }}% complete</span></div>
       <div class="stat-foot">{{ researchingCount }} districts in progress</div>
     </article>
     <article class="stat-card">
-      <div class="stat-top"><span>Website opportunity</span><span class="stat-icon icon-amber"><svg viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="8.5" />
-            <path d="M3.8 12h16.4" />
-          </svg></span></div>
+      <div class="stat-top"><span>Website opportunity</span><span class="stat-icon icon-amber"><ng-icon
+            name="lucideGlobe" aria-hidden="true" /></span></div>
       <div class="stat-value">{{ websiteGapCount }}</div>
       <div class="stat-foot">No website or needs improvement</div>
     </article>
@@ -48,20 +44,21 @@
       <div class="panel-heading">
         <div><span class="panel-eyebrow">STATEWIDE REACH</span>
           <h2>District coverage</h2>
-          <p>{{ coveredCount }} of {{ coverage.length || 34 }} districts marked covered</p>
-        </div><a routerLink="/coverage" class="text-link">View all districts <span>→</span></a>
+          <p>{{ coverage.length || 34 }} districts · highest lead count first</p>
+        </div><a routerLink="/coverage" class="text-link">View all districts <ng-icon name="lucideArrowRight"
+            aria-hidden="true" /></a>
       </div>
       <div class="coverage-progress">
         <div class="progress-track"><span [style.width.%]="coveragePercent"></span></div><strong>{{ coveragePercent
           }}%</strong>
       </div>
-      <div class="district-list"><a class="district-row" *ngFor="let item of topDistricts; trackBy: trackByDistrictId"
-          routerLink="/coverage"><span class="district-initial">{{ item.district.charAt(0) }}</span><span
-            class="district-name"><strong>{{ item.district }}</strong><small>{{ item.status }}</small></span><span
-            class="district-count">{{ item.leadCount }} <small>leads</small></span><span class="mini-bar"><i
-              [style.width.%]="leads.length ? item.leadCount / leads.length * 100 : 0"></i></span></a>
+      <div class="district-grid" aria-label="District cards ordered by lead count, highest first"><a class="district-card" *ngFor="let item of districtsByLeadCount; trackBy: trackByDistrictId"
+          routerLink="/coverage"><span class="district-card-top"><span class="district-initial">{{ item.district.charAt(0) }}</span><strong
+            class="district-card-name">{{ item.district }}</strong></span><span class="district-card-count"><strong>{{ item.leadCount | number }}</strong><small>leads</small></span><span
+            class="district-card-status">{{ item.status }}</span><span class="mini-bar"><i
+              [style.width.%]="totalLeads ? item.leadCount / totalLeads * 100 : 0"></i></span></a>
         <div class="empty-state compact-empty" *ngIf="!loading && coverage.length === 0"><strong>No district list
-            loaded</strong><span>Run the district workspace migration in Supabase.</span></div>
+            loaded</strong><span>Check the MongoDB API and district_coverage collection.</span></div>
       </div>
     </section>
 
@@ -69,56 +66,23 @@
       <div class="panel-heading">
         <div><span class="panel-eyebrow">LEAD MIX</span>
           <h2>Business industries</h2>
-          <p>{{ leads.length }} leads across {{ industryStats.length }} recorded categories</p>
-        </div><span class="panel-icon">↗</span>
+          <p *ngIf="loading">Loading industry data…</p>
+          <p *ngIf="!loading">{{ totalLeads | number }} leads across {{ industryCategoryCount | number }} recorded
+            categories</p>
+        </div><span class="panel-icon" aria-hidden="true"><ng-icon name="lucideArrowUpRight" /></span>
       </div>
       <div class="industry-list">
+        <div class="industry-loading" *ngIf="loading" role="status">Loading industries…</div>
+        <p class="industry-list-label">All categories · highest lead count first</p>
         <div class="industry-row" *ngFor="let item of industryStats; trackBy: trackByIndustry">
-          <div class="industry-label"><span>{{ item.name }}</span><strong>{{ item.count }}</strong></div>
+          <div class="industry-label"><span>{{ item.name }}</span><strong>{{ item.count | number }}</strong></div>
           <div class="industry-track"><i [style.width.%]="item.width"></i></div>
         </div>
         <div class="empty-state compact-empty" *ngIf="!loading && industryStats.length === 0"><strong>No industries
             yet</strong><span>Industries will appear as leads are added.</span></div>
-      </div><a class="panel-bottom-link" routerLink="/leads">Open lead directory <span>→</span></a>
+      </div><a class="panel-bottom-link" routerLink="/leads">Open lead directory <ng-icon name="lucideArrowRight"
+          aria-hidden="true" /></a>
     </section>
   </div>
 
-  <section class="panel recent-panel">
-    <div class="panel-heading">
-      <div><span class="panel-eyebrow">LATEST ACTIVITY</span>
-        <h2>Recently added leads</h2>
-      </div><a routerLink="/leads" class="text-link">View lead directory <span>→</span></a>
-    </div>
-    <div class="recent-table-wrap">
-      <table class="recent-table">
-        <thead>
-          <tr>
-            <th>BUSINESS</th>
-            <th>INDUSTRY</th>
-            <th>DISTRICT</th>
-            <th>WEBSITE STATUS</th>
-            <th>LEAD STATUS</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let lead of latestLeads">
-            <td><strong>{{ lead.name }}</strong></td>
-            <td>{{ lead.industry }}</td>
-            <td>{{ lead.district || 'Amreli' }}</td>
-            <td><span class="website-badge" [class.gap-badge]="lead.websiteStatus === 'No website'"
-                [class.needs-badge]="lead.websiteStatus === 'Needs improvement'"
-                [class.unknown-badge]="lead.websiteStatus === 'Unknown'">{{ lead.websiteStatus }}</span></td>
-            <td><span class="status-badge">{{ lead.status }}</span></td>
-          </tr>
-          <tr *ngIf="!loading && leads.length === 0">
-            <td colspan="5">
-              <div class="empty-state compact-empty"><strong>Your lead list is ready</strong><span>Add the first
-                  prospect to see statewide insights here.</span><a routerLink="/leads"
-                  class="button button-secondary">Add a lead</a></div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
 </div>

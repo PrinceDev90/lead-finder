@@ -6,42 +6,48 @@
       <h1>Lead directory</h1>
       <p class="page-subtitle">Manage every business, contact and follow-up across Gujarat.</p>
     </div>
-    <div class="heading-actions"><button class="button button-secondary" (click)="exportCsv()"><svg viewBox="0 0 24 24">
-          <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v3h14v-3" />
-        </svg>Export</button><button class="button button-secondary" routerLink="/paste"><span class="plus">↳</span>
-        Paste leads</button><button class="button button-primary" (click)="openNew()"><span class="plus">+</span> Add
-        lead</button></div>
+    <div class="heading-actions">
+      <button class="button button-secondary" (click)="exportCsv()" [disabled]="exporting">
+        <ng-icon name="lucideDownload" aria-hidden="true" />{{ exporting ? 'Exporting…' : 'Export' }}
+      </button>
+      <button class="button button-secondary" routerLink="/paste">
+        <ng-icon name="lucideClipboardPaste" aria-hidden="true" />Paste leads
+      </button>
+      <button class="button button-primary" (click)="openNew()">
+        <ng-icon name="lucidePlus" aria-hidden="true" />Add lead
+      </button>
+    </div>
   </div>
-  <div class="notice error-notice" *ngIf="error"><span class="notice-icon">!</span><span>{{ error }}</span><button
-      (click)="dismissError()" aria-label="Dismiss">×</button></div>
+  <div class="notice error-notice" *ngIf="error" role="alert">
+    <ng-icon class="notice-icon" name="lucideTriangleAlert" aria-hidden="true" />
+    <span>{{ error }}</span>
+    <button class="retry-button" type="button" (click)="loadLeads()" [disabled]="loading">Retry</button>
+    <button class="dismiss-button" type="button" (click)="dismissError()" aria-label="Dismiss error">
+      <ng-icon name="lucideX" aria-hidden="true" />
+    </button>
+  </div>
   <section class="stats-grid" aria-label="Lead statistics">
     <article class="stat-card">
-      <div class="stat-top"><span>Total leads</span><span class="stat-icon icon-lilac"><svg viewBox="0 0 24 24">
-            <path
-              d="M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20m6-9a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
-          </svg></span></div>
-      <div class="stat-value">{{ leads.length }}</div>
+      <div class="stat-top"><span>Total leads</span><span class="stat-icon icon-lilac"><ng-icon name="lucideUsers"
+            aria-hidden="true" /></span></div>
+      <div class="stat-value">{{ totalLeads }}</div>
       <div class="stat-foot">Across all Gujarat districts</div>
     </article>
     <article class="stat-card">
-      <div class="stat-top"><span>Website opportunity</span><span class="stat-icon icon-amber"><svg viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="8.5" />
-            <path d="M3.8 12h16.4" />
-          </svg></span></div>
+      <div class="stat-top"><span>Website opportunity</span><span class="stat-icon icon-amber"><ng-icon
+            name="lucideGlobe" aria-hidden="true" /></span></div>
       <div class="stat-value">{{ websiteGapCount }}</div>
       <div class="stat-foot">No site or needs a refresh</div>
     </article>
     <article class="stat-card">
-      <div class="stat-top"><span>Outreach started</span><span class="stat-icon icon-blue"><svg viewBox="0 0 24 24">
-            <path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H5l1.6-3.1A7.5 7.5 0 1 1 20 11.5Z" />
-          </svg></span></div>
+      <div class="stat-top"><span>Outreach started</span><span class="stat-icon icon-blue"><ng-icon
+            name="lucideUsersRound" aria-hidden="true" /></span></div>
       <div class="stat-value">{{ contactedCount }}</div>
       <div class="stat-foot">Contacted and beyond</div>
     </article>
     <article class="stat-card area-card">
-      <div class="stat-top"><span>Coverage</span><span class="stat-icon icon-green"><svg viewBox="0 0 24 24">
-            <path d="m5 12 4 4L19 6" />
-          </svg></span></div>
+      <div class="stat-top"><span>Coverage</span><span class="stat-icon icon-green"><ng-icon name="lucideCircleCheck"
+            aria-hidden="true" /></span></div>
       <div class="area-value">{{ districts.length }} <span class="area-tag">DISTRICTS</span></div>
       <div class="stat-foot">One state · One growing pipeline</div>
     </article>
@@ -55,21 +61,21 @@
       </div>
     </div>
     <div class="table-toolbar">
-      <div class="tabs"><button [class.active]="activeTab === 'All leads'" (click)="activeTab = 'All leads'">All leads
-          <span>{{ leads.length }}</span></button><button [class.active]="activeTab === 'Needs a website'"
-          (click)="activeTab = 'Needs a website'">Needs a website <span>{{ websiteGapCount }}</span></button></div>
-      <div class="table-tools"><label class="search-box"><svg viewBox="0 0 24 24">
-            <circle cx="10.8" cy="10.8" r="6.8" />
-            <path d="m16 16 4.2 4.2" />
-          </svg><input [(ngModel)]="query" placeholder="Search leads..." aria-label="Search leads"></label><select
-          class="select-filter district-filter" [(ngModel)]="districtFilter" aria-label="Filter by district">
+      <div class="tabs"><button [class.active]="activeTab === 'All leads'" (click)="setActiveTab('All leads')">All leads
+          <span>{{ totalLeads }}</span></button><button [class.active]="activeTab === 'Needs a website'"
+          (click)="setActiveTab('Needs a website')">Needs a website <span>{{ websiteGapCount }}</span></button></div>
+      <div class="table-tools"><label class="search-box"><ng-icon name="lucideSearch" aria-hidden="true" /><input
+            [ngModel]="query" (ngModelChange)="onSearchChanged($event)" placeholder="Search leads..."
+            aria-label="Search leads"></label><select class="select-filter district-filter" [(ngModel)]="districtFilter"
+          (ngModelChange)="applyFilters()" aria-label="Filter by district">
           <option>All districts</option>
           <option *ngFor="let district of districts">{{ district }}</option>
-        </select><select class="select-filter" [(ngModel)]="statusFilter" aria-label="Filter by status">
+        </select><select class="select-filter" [(ngModel)]="statusFilter" (ngModelChange)="applyFilters()"
+          aria-label="Filter by status">
           <option>All statuses</option>
           <option *ngFor="let status of statuses">{{ status }}</option>
         </select><select class="select-filter website-select" [(ngModel)]="websiteFilter"
-          aria-label="Filter by website status">
+          (ngModelChange)="applyFilters()" aria-label="Filter by website status">
           <option>All website statuses</option>
           <option *ngFor="let status of websiteStatuses">{{ status }}</option>
         </select></div>
@@ -89,18 +95,18 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let lead of paginatedLeads">
+          <tr *ngFor="let lead of leads">
             <td>
-              <div class="business-cell"><span class="business-avatar">{{ lead.name.charAt(0) }}</span>
-                <div class="business-meta"><strong><a *ngIf="lead?.website" [href]="lead.website" class="text-white" target="_blank">{{ lead.name }}</a> <span *ngIf="!lead?.website">{{ lead.name }}</span></strong><small>{{ lead.source || 'Added ' +
+              <div class="business-cell"><span class="business-avatar">{{ lead.name.charAt(0) || 'L' }}</span>
+                <div class="business-meta"><strong><a *ngIf="lead?.website" [href]="lead.website" class="text-white"
+                      target="_blank" rel="noopener noreferrer">{{ lead.name }}</a> <span *ngIf="!lead?.website">{{
+                      lead.name }}</span></strong><small>{{ lead.source || 'Added ' +
                     (lead.created_at | date:'MMM d') }}</small></div>
               </div>
             </td>
             <td><span class="industry-text">{{ lead.industry }}</span></td>
-            <td><span class="location-text"><svg viewBox="0 0 24 24">
-                  <path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z" />
-                  <circle cx="12" cy="10" r="2" />
-                </svg><span><strong>{{ lead.district || 'Amreli' }}</strong><small>{{ lead.city || '—'
+            <td><span class="location-text"><ng-icon name="lucideMapPin" aria-hidden="true" /><span><strong>{{
+                    lead.district || 'Amreli' }}</strong><small>{{ lead.city || '—'
                     }}</small></span></span></td>
             <td>
               <div class="contact-cell"><a *ngIf="lead.phone" [href]="'tel:' + lead.phone">{{ lead.phone }}</a><a
@@ -108,46 +114,46 @@
                   *ngIf="!lead.phone && !lead.email" class="muted">No contact yet</span></div>
             </td>
             <td><a *ngIf="getBusinessUrl(lead.url) as businessUrl" class="business-url-link" [href]="businessUrl"
-                target="_blank" rel="noopener noreferrer" [title]="lead.url">Open URL ↗</a><span *ngIf="!lead.url"
+                target="_blank" rel="noopener noreferrer" [title]="businessUrl">Open URL <ng-icon
+                  name="lucideExternalLink" aria-hidden="true" /></a><span *ngIf="!getBusinessUrl(lead.url)"
                 class="muted">—</span></td>
             <td><span class="website-badge" [class.gap-badge]="lead.websiteStatus === 'No website'"
                 [class.needs-badge]="lead.websiteStatus === 'Needs improvement'"
                 [class.unknown-badge]="lead.websiteStatus === 'Unknown'">{{ lead.websiteStatus }}</span></td>
-            <td><span class="status-badge" [ngClass]="'status-' + lead.status.toLowerCase().replace(' ', '-')"><i></i>{{
-                lead.status }}</span></td>
-            <td class="row-actions"><button class="icon-button" (click)="openEdit(lead)" aria-label="Edit lead"><svg
-                  viewBox="0 0 24 24">
-                  <path d="m14 6 4 4M4 20l4-.8L19 8.2a2.1 2.1 0 0 0-3-3L5 16.2 4 20Z" />
-                </svg></button><button class="icon-button delete-action" (click)="deleteLead(lead)"
-                aria-label="Delete lead"><svg viewBox="0 0 24 24">
-                  <path d="M4 7h16m-10 0V4h4v3m4 0-1 13H7L6 7m3 3v6m6-6v6" />
-                </svg></button></td>
+            <td><span class="status-badge"
+                [ngClass]="'status-' + (lead.status || 'New').toLowerCase().replace(' ', '-')"><i></i>{{
+                lead.status || 'New' }}</span></td>
+            <td class="row-actions"><button class="icon-button" (click)="openEdit(lead)" aria-label="Edit lead"><ng-icon
+                  name="lucidePencil" aria-hidden="true" /></button><button class="icon-button delete-action"
+                (click)="deleteLead(lead)" aria-label="Delete lead"><ng-icon name="lucideTrash2"
+                  aria-hidden="true" /></button></td>
           </tr>
-          <tr *ngIf="!loading && filteredLeads.length === 0">
+          <tr *ngIf="!loading && filteredTotal === 0">
             <td colspan="8">
-              <div class="empty-state"><span class="empty-icon">⌕</span><strong>No leads found</strong><span>Try
+              <div class="empty-state"><ng-icon class="empty-icon" name="lucideSearch" aria-hidden="true" /><strong>No
+                  leads found</strong><span>Try
                   adjusting your filters, or add a lead.</span><button class="button button-secondary"
                   (click)="openNew()">Add a lead</button></div>
             </td>
           </tr>
           <tr *ngIf="loading">
             <td colspan="8">
-              <div class="loading-row"><span class="spinner"></span>Loading your leads…</div>
+              <div class="loading-row" role="status" aria-live="polite"><span class="spinner" aria-hidden="true"></span>Loading your leads…</div>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
-    <div class="table-footer" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-      <span>Showing page <strong>{{ currentPage }}</strong> of <strong>{{ totalPages }}</strong> ({{
-        filteredLeads.length }} filtered)</span>
-      <div class="pagination-controls" style="display: flex; gap: 8px; align-items: center;">
-        <button class="button button-secondary" style="height: 28px; padding: 0 10px; min-height: 28px;"
-          (click)="prevPage()" [disabled]="currentPage === 1">Previous</button>
-        <span style="font-size: 11px; color: #c4c7c5;">Page {{ currentPage }} / {{ totalPages }}</span>
-        <button class="button button-secondary" style="height: 28px; padding: 0 10px; min-height: 28px;"
-          (click)="nextPage()" [disabled]="currentPage >= totalPages">Next</button>
-      </div>
+    <div class="table-footer">
+      <span>Showing <strong>{{ showingFrom }}</strong>–<strong>{{ showingTo }}</strong> of <strong>{{ filteredTotal
+          }}</strong> filtered leads</span>
+      <nav class="pagination-controls" aria-label="Lead pages">
+        <button class="button button-secondary" type="button" (click)="prevPage()"
+          [disabled]="currentPage === 1">Previous</button>
+        <span class="page-number" aria-live="polite">Page {{ currentPage }} / {{ totalPages }}</span>
+        <button class="button button-secondary" type="button" (click)="nextPage()"
+          [disabled]="currentPage >= totalPages">Next</button>
+      </nav>
     </div>
   </section>
 </div>
@@ -159,7 +165,8 @@
       <div><span class="modal-kicker">LEAD DETAILS</span>
         <h2 id="modal-title">{{ editingId ? 'Edit lead' : 'Add a new lead' }}</h2>
         <p>Keep location, business and follow-up details together.</p>
-      </div><button class="modal-close" (click)="closeModal()" aria-label="Close dialog">×</button>
+      </div><button class="modal-close" type="button" (click)="closeModal()" aria-label="Close dialog"><ng-icon
+          name="lucideX" aria-hidden="true" /></button>
     </header>
     <form (ngSubmit)="saveLead()">
       <div class="form-grid"><label class="field full-field"><span>Business name <em>*</em></span><input
@@ -198,4 +205,4 @@
     </form>
   </section>
 </div>
-<div class="toast" *ngIf="toast"><span>✓</span>{{ toast }}</div>
+<div class="toast" *ngIf="toast" role="status"><ng-icon name="lucideCircleCheck" aria-hidden="true" />{{ toast }}</div>

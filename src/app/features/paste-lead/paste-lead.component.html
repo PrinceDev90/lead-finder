@@ -3,15 +3,20 @@
     <div>
       <span class="eyebrow"><span class="eyebrow-line"></span>AI EXTRACTION / REVIEW BEFORE SAVE</span>
       <h1>Paste lead data</h1>
-      <p class="page-subtitle">Paste a table, notes, or mixed-format business information. The AI will suggest how each detail maps to a lead.</p>
+      <p class="page-subtitle">Paste a table, notes, or mixed-format business information. The AI will suggest how each
+        detail maps to a lead.</p>
     </div>
     <div class="heading-actions">
       <button class="button button-secondary" routerLink="/leads">Cancel</button>
-      <button type="button" class="button button-primary" (click)="parsePastedLeads()" [disabled]="parsing || importing || !pasteText.trim()">
-        {{ parsing ? 'Reading and mapping...' : 'Extract with AI' }}
+      <button type="button" class="button button-primary" (click)="parsePastedLeads()"
+        [disabled]="parsing || importing || !pasteText.trim()" [attr.aria-busy]="parsing ? 'true' : null">
+        <ng-icon name="lucideSparkles" aria-hidden="true" />{{ parsing ? 'Reading and mapping...' : 'Extract with AI' }}
       </button>
-      <button type="button" class="button button-primary" *ngIf="pasteRows.length" (click)="savePastedLeads()" [disabled]="parsing || importing || !selectedPasteRows.length">
-        {{ importing ? 'Saving...' : 'Save ' + selectedPasteRows.length + ' leads' }}
+      <button type="button" class="button button-primary" *ngIf="pasteRows.length" (click)="savePastedLeads()"
+        [disabled]="parsing || importing || !selectedPasteRows.length"
+        [attr.aria-busy]="importing ? 'true' : null">
+        <ng-icon name="lucideCircleCheck" aria-hidden="true" />{{ importing ? 'Saving...' : 'Save ' +
+        selectedPasteRows.length + ' leads' }}
       </button>
     </div>
   </div>
@@ -20,13 +25,15 @@
     <div class="paste-body">
       <label class="field">
         <span>Business information</span>
-        <textarea [(ngModel)]="pasteText" name="pasteText" rows="12" placeholder="Paste spreadsheet rows, a Markdown table, or unstructured business notes..."></textarea>
+        <textarea [(ngModel)]="pasteText" name="pasteText" rows="12"
+          placeholder="Paste spreadsheet rows, a Markdown table, or unstructured business notes..."></textarea>
       </label>
-      <p class="paste-help">The AI only extracts what appears in your paste; it won't search the web. Missing or unclear details are left blank or flagged for review.</p>
-      
-      <div class="paste-alert paste-error" *ngIf="pasteError">{{ pasteError }}</div>
-      <div class="paste-alert paste-info" *ngIf="pasteNotice">{{ pasteNotice }}</div>
-      
+      <p class="paste-help">The AI can process up to 55 lead records and 50,000 characters per request. It only extracts what appears in your paste; it won't search the web. Missing or unclear
+        details are left blank or flagged for review.</p>
+
+      <div class="paste-alert paste-error" *ngIf="pasteError" role="alert">{{ pasteError }}</div>
+      <div class="paste-alert paste-info" *ngIf="pasteNotice" role="status" aria-live="polite">{{ pasteNotice }}</div>
+
       <div class="preview-heading" *ngIf="pasteRows.length">
         <div>
           <strong>Review extracted leads</strong>
@@ -34,7 +41,7 @@
         </div>
         <button type="button" class="text-button" (click)="selectValidPasteRows()">Select reviewable rows</button>
       </div>
-      
+
       <div class="paste-preview" *ngIf="pasteRows.length">
         <table>
           <thead>
@@ -57,25 +64,37 @@
           <tbody>
             <tr *ngFor="let row of pasteRows" [class.duplicate-row]="row.duplicate">
               <td>
-                <input type="checkbox" [(ngModel)]="row.selected" [ngModelOptions]="{standalone:true}" [attr.aria-label]="'Import row ' + row.rowNumber" [disabled]="!row.lead.name || !row.lead.industry">
+                <input type="checkbox" [(ngModel)]="row.selected" [ngModelOptions]="{standalone:true}"
+                  [attr.aria-label]="'Import row ' + row.rowNumber" [disabled]="!row.lead.name || !row.lead.industry">
               </td>
-              <td><input class="preview-input" [(ngModel)]="row.lead.name" [ngModelOptions]="{standalone:true}" placeholder="Business name"></td>
-              <td><input class="preview-input" [(ngModel)]="row.lead.industry" [ngModelOptions]="{standalone:true}" placeholder="Industry"></td>
-              <td><input class="preview-input" [(ngModel)]="row.lead.district" [ngModelOptions]="{standalone:true}" placeholder="District"></td>
-              <td><input class="preview-input" [(ngModel)]="row.lead.city" [ngModelOptions]="{standalone:true}" placeholder="City / area"></td>
-              <td><input class="preview-input" [(ngModel)]="row.lead.phone" [ngModelOptions]="{standalone:true}" placeholder="Phone"></td>
-              <td><input class="preview-input" [(ngModel)]="row.lead.email" [ngModelOptions]="{standalone:true}" placeholder="Email"></td>
-              <td><input class="preview-input" [(ngModel)]="row.lead.url" [ngModelOptions]="{standalone:true}" placeholder="Maps / listing URL"></td>
-              <td><input class="preview-input" [(ngModel)]="row.lead.website" [ngModelOptions]="{standalone:true}" placeholder="Website"></td>
+              <td><input class="preview-input" [(ngModel)]="row.lead.name" [ngModelOptions]="{standalone:true}"
+                  placeholder="Business name"></td>
+              <td><input class="preview-input" [(ngModel)]="row.lead.industry" [ngModelOptions]="{standalone:true}"
+                  placeholder="Industry"></td>
+              <td><input class="preview-input" [(ngModel)]="row.lead.district" [ngModelOptions]="{standalone:true}"
+                  placeholder="District"></td>
+              <td><input class="preview-input" [(ngModel)]="row.lead.city" [ngModelOptions]="{standalone:true}"
+                  placeholder="City / area"></td>
+              <td><input class="preview-input" [(ngModel)]="row.lead.phone" [ngModelOptions]="{standalone:true}"
+                  placeholder="Phone"></td>
+              <td><input class="preview-input" [(ngModel)]="row.lead.email" [ngModelOptions]="{standalone:true}"
+                  placeholder="Email"></td>
+              <td><input class="preview-input" [(ngModel)]="row.lead.url" [ngModelOptions]="{standalone:true}"
+                  placeholder="Maps / listing URL"></td>
+              <td><input class="preview-input" [(ngModel)]="row.lead.website" [ngModelOptions]="{standalone:true}"
+                  placeholder="Website"></td>
               <td>
                 <select class="preview-input" [(ngModel)]="row.lead.websiteStatus" [ngModelOptions]="{standalone:true}">
                   <option *ngFor="let status of websiteStatuses">{{ status }}</option>
                 </select>
               </td>
-              <td><textarea class="preview-input preview-textarea" [(ngModel)]="row.lead.about" [ngModelOptions]="{standalone:true}" placeholder="About"></textarea></td>
-              <td><textarea class="preview-input preview-textarea" [(ngModel)]="row.lead.aiSuggestion" [ngModelOptions]="{standalone:true}" placeholder="AI Suggestions"></textarea></td>
+              <td><textarea class="preview-input preview-textarea" [(ngModel)]="row.lead.about"
+                  [ngModelOptions]="{standalone:true}" placeholder="About"></textarea></td>
+              <td><textarea class="preview-input preview-textarea" [(ngModel)]="row.lead.aiSuggestion"
+                  [ngModelOptions]="{standalone:true}" placeholder="AI Suggestions"></textarea></td>
               <td>
-                <span class="confidence-badge" [ngClass]="'confidence-' + row.confidence">{{ row.confidence }} confidence</span>
+                <span class="confidence-badge" [ngClass]="'confidence-' + row.confidence">{{ row.confidence }}
+                  confidence</span>
                 <span class="row-warning" *ngIf="row.duplicate">Possible duplicate</span>
                 <span class="row-warning" *ngIf="!row.lead.name || !row.lead.industry">Name + industry needed</span>
                 <details class="source-details">

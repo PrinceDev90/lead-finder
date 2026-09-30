@@ -1,54 +1,57 @@
 import { Injectable } from '@angular/core';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { environment } from '../../../environments/environment';
-import { DistrictCoverage, Lead, LeadInput } from '../../shared/models/lead.model';
+import { DistrictCoverage, Lead, LeadInput, LeadPage, StateDashboardSummary } from '../../shared/models/lead.model';
 import { LeadExtractionResponse } from '../../shared/models/lead-extraction.model';
 
-const MAX_LEAD_RECORDS = 25;
+const MAX_LEAD_RECORDS = 55;
 
 @Injectable({ providedIn: 'root' })
 export class LeadDataService {
-  private readonly supabase: SupabaseClient = createClient(environment.supabaseUrl, environment.supabaseKey);
-
-  async getLeads() {
-    const pageSize = 1000;
-    const leads: Lead[] = [];
-    let from = 0;
-
-    while (true) {
-      const { data, error } = await this.supabase.from('leads').select('*')
-        .order('created_at', { ascending: false })
-        .order('id', { ascending: true })
-        .range(from, from + pageSize - 1)
-        .returns<Lead[]>()
-        .abortSignal(AbortSignal.timeout(15000));
-
-      if (error) return { data: null, error };
-      const page = data ?? [];
-      leads.push(...page);
-      if (page.length < pageSize) break;
-      from += page.length;
+  getLeads(filters: LeadFilters = {}, page = 1, pageSize = 100): Promise<ApiResult<LeadPage>> {
+    const limit = Math.min(Math.max(Math.trunc(pageSize) || 100, 1), 100);
+    const currentPage = Math.max(Math.trunc(page) || 1, 1);
+    const query = new URLSearchParams({ limit: String(limit), offset: String((currentPage - 1) * limit) });
+    for (const [field, value] of Object.entries(filters)) {
+      if (typeof value === 'string' && value.trim()) query.set(field, value.trim());
+      else if (typeof value === 'boolean') query.set(field, String(value));
     }
+    return this.request<LeadPage>(`/api/leads?${query.toString()}`);
+  }
 
+  async getAllLeads(filters: LeadFilters = {}): Promise<ApiResult<Lead[]>> {
+    const leads: Lead[] = [];
+    let page = 1;
+    while (true) {
+      const result = await this.getLeads(filters, page, 100);
+      if (result.error || !result.data) return { data: null, error: result.error };
+      leads.push(...result.data.items);
+      if (leads.length >= result.data.total || result.data.items.length === 0) break;
+      page++;
+    }
     return { data: leads, error: null };
   }
 
-  addLead(lead: LeadInput) {
-    return this.supabase.from('leads').insert(lead).select().single<Lead>();
+  checkLeadDuplicates(leads: LeadInput[]): Promise<ApiResult<{ duplicates: boolean[] }>> {
+    return this.request<{ duplicates: boolean[] }>('/api/leads/check-duplicates', {
+      method: 'POST', body: JSON.stringify({ leads }),
+    });
   }
 
-  addLeads(leads: LeadInput[]) {
-    return this.supabase.from('leads').insert(leads).select().returns<Lead[]>();
+  addLead(lead: LeadInput): Promise<ApiResult<Lead>> {
+    return this.request<Lead>('/api/leads', { method: 'POST', body: JSON.stringify(lead) });
+  }
+
+  addLeads(leads: LeadInput[]): Promise<ApiResult<Lead[]>> {
+    return this.request<Lead[]>('/api/leads/bulk', { method: 'POST', body: JSON.stringify({ leads }) });
   }
 
   async extractPastedLeads(text: string): Promise<LeadExtractionResponse> {
     const response = await fetch('/api/extract-leads', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      signal: AbortSignal.timeout(60000),
+      signal: AbortSignal.timeout(120000),
       body: JSON.stringify({ text }),
     });
-    const result = await response.json();
+    const result = await response.json().catch(() => null);
     if (!response.ok) {
       throw new Error(result?.error || `AI extraction returned HTTP ${response.status}.`);
     }
@@ -57,20 +60,68 @@ export class LeadDataService {
     return { records: parsed.records.slice(0, MAX_LEAD_RECORDS), warnings: parsed.warnings.slice(0, 20) };
   }
 
-  updateLead(id: string, changes: LeadInput) {
-    return this.supabase.from('leads').update(changes).eq('id', id).select().single<Lead>();
+  updateLead(id: string, changes: LeadInput): Promise<ApiResult<Lead>> {
+    return this.request<Lead>(`/api/leads/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(changes) });
   }
 
-  deleteLead(id: string) {
-    return this.supabase.from('leads').delete().eq('id', id);
+  deleteLead(id: string): Promise<ApiResult<{ deleted: boolean }>> {
+    return this.request<{ deleted: boolean }>(`/api/leads/${encodeURIComponent(id)}`, { method: 'DELETE' });
   }
 
-  getDistrictCoverage() {
-    return this.supabase.from('district_coverage').select('*').eq('state', 'Gujarat').order('district')
-      .returns<DistrictCoverage[]>().abortSignal(AbortSignal.timeout(15000));
+  getDistrictCoverage(): Promise<ApiResult<DistrictCoverage[]>> {
+    return this.request<DistrictCoverage[]>('/api/coverage');
   }
 
-  updateDistrictCoverage(id: string, status: DistrictCoverage['status']) {
-    return this.supabase.from('district_coverage').update({ status }).eq('id', id).select().single<DistrictCoverage>();
+  getIndustryStats(): Promise<ApiResult<{ totalLeads: number; categories: { name: string; count: number }[] }>> {
+    return this.request('/api/leads/industry-stats');
   }
+
+  getStateDashboardSummary(state: string): Promise<ApiResult<StateDashboardSummary>> {
+    const query = new URLSearchParams({ state });
+    return this.request<StateDashboardSummary>(`/api/dashboard/state-summary?${query.toString()}`);
+  }
+
+  updateDistrictCoverage(id: string, status: DistrictCoverage['status']): Promise<ApiResult<DistrictCoverage>> {
+    return this.request<DistrictCoverage>(`/api/coverage/${encodeURIComponent(id)}`, {
+      method: 'PATCH', body: JSON.stringify({ status }),
+    });
+  }
+
+  private async request<T>(path: string, init: RequestInit = {}): Promise<ApiResult<T>> {
+    try {
+      const headers = new Headers(init.headers);
+      if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+      const response = await fetch(path, {
+        ...init,
+        headers,
+        signal: init.signal ?? AbortSignal.timeout(15000),
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) {
+        const error = new Error(payload?.error || `API returned HTTP ${response.status}.`) as ApiError;
+        error.code = payload?.code;
+        return { data: null, error };
+      }
+      return { data: payload as T, error: null };
+    } catch (error) {
+      return { data: null, error: toError(error) };
+    }
+  }
+}
+
+interface ApiResult<T> { data: T | null; error: ApiError | null }
+interface ApiError extends Error { code?: string }
+export interface LeadFilters {
+  state?: string;
+  district?: string;
+  status?: string;
+  websiteStatus?: string;
+  industry?: string;
+  city?: string;
+  search?: string;
+  websiteOpportunity?: boolean;
+}
+
+function toError(error: unknown): Error {
+  return error instanceof Error ? error : new Error('Could not reach the backend API.');
 }

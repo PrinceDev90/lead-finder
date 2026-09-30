@@ -10,7 +10,7 @@ describe('PasteLeadComponent', () => {
     await TestBed.configureTestingModule({
       imports: [PasteLeadComponent]
     })
-    .compileComponents();
+      .compileComponents();
 
     fixture = TestBed.createComponent(PasteLeadComponent);
     component = fixture.componentInstance;
